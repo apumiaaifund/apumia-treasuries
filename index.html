@@ -48,11 +48,19 @@ function render(){
   document.getElementById("tb").innerHTML = vis.map(r=>`<tr><td>${r.isin}</td><td><b>${r.ticker}</b></td><td>${r.issuer}</td><td>${r.price.toFixed(2)}</td><td>${r.cpn.toFixed(2)}</td><td>${r.mat}</td><td><b>${r.ytm}%</b></td><td>${r.src.toFixed(2)}%</td><td>${r.mod}y</td><td class="${r.ok?'ok':'warn'}">${r.ok?'OK':'MISMATCH ('+r.diff+'pp)'}</td><td>${r.rec}</td></tr>`).join("");
 }
 function readCsv(inp){
-  const file = inp.files && inp.files; if(!file) return;
+  const file = inp.files ? inp.files.item(0) : null;
+  if(!file) return;
   const rd = new FileReader();
   rd.onload = e => {
-    const ls = String(e.target.result).trim().splitlines ? String(e.target.result).trim().split(/\r?\n/) : String(e.target.result).trim().split("\n");
-    rows = ls.slice(1).map(l=>{ const c=l.split(/[,;]/); return calcBond({isin:c,ticker:c||c,issuer:c||"Issuer",price:parseFloat(c)||100,cpn:parseFloat(c)||4,freq:2,mat:c||"2030-01-01",rating:c||"AA",src:parseFloat(c)||4}); });
+    const ls = String(e.target.result).trim().split(/\r?\n/);
+    rows = ls.slice(1).filter(Boolean).map(l=>{
+      const c = l.split(/[,;]/);
+      return calcBond({
+        isin: c.at(0), ticker: c.at(1)||c.at(0), issuer: c.at(3)||"Issuer",
+        price: parseFloat(c.at(7))||100, cpn: parseFloat(c.at(9))||4, freq: 2,
+        mat: c.at(11)||"2030-01-01", rating: c.at(13)||"AA", src: parseFloat(c.at(16))||4
+      });
+    });
     render();
   };
   rd.readAsText(file);
